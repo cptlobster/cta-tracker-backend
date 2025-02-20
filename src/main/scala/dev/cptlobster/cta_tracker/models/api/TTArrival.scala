@@ -6,7 +6,7 @@ import java.util.Date
 
 case class TTArrival(tmst: Date,
                      errCd: Int,
-                     errNm: Int,
+                     errNm: String,
                      eta: List[ArrivalETA]) extends TTResponse
 
 case class ArrivalETA(staId: Int,
