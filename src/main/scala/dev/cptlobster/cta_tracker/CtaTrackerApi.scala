@@ -21,6 +21,8 @@ import org.json4s.jackson.JsonMethods.*
 
 import scala.collection.mutable
 
+import org.slf4j.{Logger, LoggerFactory}
+
 /**
  * Interaction with CTA API.
  * @param key Your unique API key, assigned to you after agreeing to DLA and requesting a key be generated for you.
@@ -28,6 +30,8 @@ import scala.collection.mutable
 case class CtaTrackerApi(key: String):
   private val baseUrl: String = "http://lapi.transitchicago.com/api/1.0"
   private val backend = HttpClientSyncBackend()
+
+  private val logger = LoggerFactory.getLogger(getClass)
 
   implicit val formats: Formats = DefaultFormats
 
@@ -40,10 +44,14 @@ case class CtaTrackerApi(key: String):
    */
   private def request(endpoint: String, params: mutable.Map[String, Any]): String =
     params += ("key" -> key)
-    params += ("outputFormat" -> "JSON")
-    val paramStr = params.map((k, v) => s"$k=$v").mkString("&")
+    params += ("outputType" -> "JSON")
+    val stringedParams: Map[String, String] = params.map((k, v) => k -> v.toString).toMap
+
+    val queryUrl = uri"$baseUrl/$endpoint?$stringedParams"
+    logger.info(queryUrl.toString)
+
     val response = basicRequest
-      .get(uri"$baseUrl/$endpoint?$paramStr").send(backend)
+      .get(queryUrl).send(backend)
 
     response.body match
       case Left(err) => throw Exception(err)

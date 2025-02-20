@@ -13,23 +13,52 @@
  */
 package dev.cptlobster.cta_tracker
 
-import org.scalatra._
+import org.scalatra.*
+import org.slf4j.{Logger, LoggerFactory}
 
 // JSON-related libraries
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.json._
-
 
 class CtaTrackerServlet extends ScalatraServlet with JacksonJsonSupport {
   // Sets up automatic case class to JSON output serialization, required by
   // the JValueResult trait.
   protected implicit lazy val jsonFormats: Formats = DefaultFormats
 
+  private val logger = LoggerFactory.getLogger(getClass)
+
+  private val api: CtaTrackerApi = CtaTrackerApi("changeme")
+
   before() {
     contentType = formats("json")
   }
 
   get("/") {
+    logger.info("Transfer to escalator at O'Hare")
     "{\"transfer\": {\"to\": \"escalator\", \"at\": \"O'Hare\"}}"
+  }
+
+  get("/arrivals/station/:station") {
+    logger.info(s"Getting arrivals for station ${params("station")}")
+    params("station").toIntOption match
+      case Some(s) => api.stationArrivals(s)
+      case None => halt(status = 400,
+                        body = "station ID must be an integer")
+  }
+
+  get("/arrivals/stop/:stop") {
+    logger.info(s"Getting arrivals for stop ${params("stop")}")
+    params("stop").toIntOption match
+      case Some(s) => api.stopArrivals(s)
+      case None => halt(status = 400,
+        body = "stop ID must be an integer")
+  }
+
+  get("follow/:run") {
+    logger.info(s"Following run ${params("run")}")
+    params("run").toIntOption match
+      case Some(s) => api.follow(s)
+      case None => halt(status = 400,
+        body = "run ID must be an integer")
   }
 }
