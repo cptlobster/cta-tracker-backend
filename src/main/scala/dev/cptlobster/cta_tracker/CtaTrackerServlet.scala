@@ -15,8 +15,21 @@ package dev.cptlobster.cta_tracker
 
 import org.scalatra._
 
-class CtaTrackerServlet extends ScalatraServlet {
+// JSON-related libraries
+import org.json4s.{DefaultFormats, Formats}
+import org.scalatra.json._
+
+
+class CtaTrackerServlet extends ScalatraServlet with JacksonJsonSupport {
+  // Sets up automatic case class to JSON output serialization, required by
+  // the JValueResult trait.
+  protected implicit lazy val jsonFormats: Formats = DefaultFormats
+
+  before() {
+    contentType = formats("json")
+  }
+
   get("/") {
-    "transfer to escalator at O'Hare\n"
+    "{\"transfer\": {\"to\": \"escalator\", \"at\": \"O'Hare\"}}"
   }
 }
