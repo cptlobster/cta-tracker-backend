@@ -38,7 +38,7 @@ case class CtaTrackerApi(key: String):
    * @return The response from the CTA API, in JSON format.
    * @throws Exception if a non-200 status code is returned by the API.
    */
-  private def request[T](endpoint: String, params: mutable.Map[String, Any]): T =
+  private def request(endpoint: String, params: mutable.Map[String, Any]): String =
     params += ("key" -> key)
     params += ("outputFormat" -> "JSON")
     val paramStr = params.map((k, v) => s"$k=$v").mkString("&")
@@ -47,7 +47,7 @@ case class CtaTrackerApi(key: String):
 
     response.body match
       case Left(err) => throw Exception(err)
-      case Right(body) => parse(body).extract[T]
+      case Right(body) => body
 
   /**
    * Receive predictions for all platforms at a given station.
@@ -61,7 +61,7 @@ case class CtaTrackerApi(key: String):
     val params: mutable.Map[String, Any] = mutable.Map("mapid" -> station)
     if max > 0 then params += ("max" -> max)
     if route != null then params += ("rt" -> route)
-    request[TTArrival]("ttarrivals.aspx", params)
+    parse(request("ttarrivals.aspx", params)).extract[TTArrival]
 
   /**
    * Receive predictions for a specific platform at a given station.
@@ -74,7 +74,7 @@ case class CtaTrackerApi(key: String):
     val params: mutable.Map[String, Any] = mutable.Map("stpid" -> stop)
     if max > 0 then params += ("max" -> max)
     if route != null then params += ("rt" -> route)
-    request[TTArrival]("ttarrivals.aspx", params)
+    parse(request("ttarrivals.aspx", params)).extract[TTArrival]
 
   /**
    * Predict arrivals for a given train at all subsequent stations for which that train is estimated to arrive.
@@ -83,7 +83,7 @@ case class CtaTrackerApi(key: String):
    */
   def follow(run: Int): TTFollow =
     val params: mutable.Map[String, Any] = mutable.Map("run" -> run)
-    request[TTFollow]("ttfollow.aspx", params)
+    parse(request("ttfollow.aspx", params)).extract[TTFollow]
 
   /**
    * Produce a list of in-service trains and basic info / locations for one L route.
@@ -95,7 +95,7 @@ case class CtaTrackerApi(key: String):
    */
   def locations(route: RouteId): TTPosition =
     val params: mutable.Map[String, Any] = mutable.Map("rt" -> route)
-    request[TTPosition]("ttpositions.aspx", params)
+    parse(request("ttpositions.aspx", params)).extract[TTPosition]
 
   /**
    * Produce a list of in-service trains and basic info / locations for multiple L routes.
@@ -108,4 +108,4 @@ case class CtaTrackerApi(key: String):
    */
   def locations(routes: List[RouteId]): TTPosition =
     val params: mutable.Map[String, Any] = mutable.Map("rt" -> routes.mkString(","))
-    request[TTPosition]("ttpositions.aspx", params)
+    parse(request("ttpositions.aspx", params)).extract[TTPosition]
