@@ -17,14 +17,14 @@ package dev.cptlobster.cta_tracker.models
  * Enum representation of CTA routes.
  * @param s CTA representation of line names
  */
-enum Route(s: String):
-  case RED    extends Route("red")
-  case BLUE   extends Route("blue")
-  case BROWN  extends Route("brn")
-  case GREEN  extends Route("g")
-  case ORANGE extends Route("org")
-  case PURPLE extends Route("p")
-  case PINK   extends Route("pink")
-  case YELLOW extends Route("y")
+enum RouteId(s: String):
+  case RED    extends RouteId("red")
+  case BLUE   extends RouteId("blue")
+  case BROWN  extends RouteId("brn")
+  case GREEN  extends RouteId("g")
+  case ORANGE extends RouteId("org")
+  case PURPLE extends RouteId("p")
+  case PINK   extends RouteId("pink")
+  case YELLOW extends RouteId("y")
 
   override def toString: String = s
