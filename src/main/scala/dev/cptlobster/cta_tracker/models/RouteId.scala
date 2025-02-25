@@ -28,3 +28,15 @@ enum RouteId(s: String):
   case YELLOW extends RouteId("y")
 
   override def toString: String = s
+
+object RouteId:
+  def apply(s: String): RouteId = s.toLowerCase match
+    case "red" => RouteId.RED
+    case "blue" => RouteId.BLUE
+    case "brn" => RouteId.BROWN
+    case "g" => RouteId.GREEN
+    case "org" => RouteId.ORANGE
+    case "p" => RouteId.PURPLE
+    case "pink" => RouteId.PINK
+    case "y" => RouteId.YELLOW
+    case _ => throw IllegalArgumentException("Must be a valid route ID (see https://www.transitchicago.com/developers/ttdocs/#_Toc296199908 for reference)")

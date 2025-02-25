@@ -13,7 +13,7 @@ lazy val root = (project in file("."))
     version := "0.1.0-SNAPSHOT"
   )
 
-javacOptions ++= Seq("-source", "21", "-target", "21")
+javacOptions ++= Seq("-source", "21", "-target", "21", "--add-opens", "java.base/java.time=ALL-UNNAMED")
 
 // dependencies
 libraryDependencies ++= Seq(
@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
   "org.json4s" %% "json4s-ext" % "4.0.7",
   "com.softwaremill.sttp.client3" %% "core" % "3.10.3",
   "com.softwaremill.sttp.client3" %% "json4s" % "3.10.3",
-  "ch.qos.logback" % "logback-classic" % "1.5.6" % "runtime",
+  "ch.qos.logback" % "logback-classic" % "1.5.17" % "runtime",
   "jakarta.servlet" % "jakarta.servlet-api" % "6.0.0" % "provided"
 )
 

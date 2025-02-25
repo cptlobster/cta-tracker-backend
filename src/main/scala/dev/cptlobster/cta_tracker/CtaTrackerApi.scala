@@ -14,14 +14,14 @@
 package dev.cptlobster.cta_tracker
 
 import dev.cptlobster.cta_tracker.models.RouteId
-import dev.cptlobster.cta_tracker.models.api.{TTArrival, TTFollow, TTPosition}
+import dev.cptlobster.cta_tracker.models.api.{ArrivalETA, FollowETA, Route, TTArrival, TTFollow, TTPosition, Train}
+import dev.cptlobster.cta_tracker.utils.{BoolSerializer, DoubleSerializer, IntSerializer, LocalInstantSerializer, RouteIdSerializer, ShortSerializer}
 import sttp.client3.*
 import org.json4s.*
 import org.json4s.jackson.JsonMethods.*
 
 import scala.collection.mutable
-
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.LoggerFactory
 
 /**
  * Interaction with CTA API.
@@ -34,6 +34,13 @@ case class CtaTrackerApi(key: String):
   private val logger = LoggerFactory.getLogger(getClass)
 
   implicit val formats: Formats = DefaultFormats
+    + LocalInstantSerializer
+    + DoubleSerializer
+    + IntSerializer
+    + ShortSerializer
+    + BoolSerializer
+    + RouteIdSerializer
+
 
   /**
    * Execute a request against the CTA train tracker API.
@@ -55,7 +62,9 @@ case class CtaTrackerApi(key: String):
 
     response.body match
       case Left(err) => throw Exception(err)
-      case Right(body) => body
+      case Right(body) =>
+        logger.info(body)
+        body
 
   /**
    * Receive predictions for all platforms at a given station.
@@ -69,7 +78,8 @@ case class CtaTrackerApi(key: String):
     val params: mutable.Map[String, Any] = mutable.Map("mapid" -> station)
     if max > 0 then params += ("max" -> max)
     if route != null then params += ("rt" -> route)
-    parse(request("ttarrivals.aspx", params)).extract[TTArrival]
+    val responseJson = parse(request("ttarrivals.aspx", params)) \ "ctatt"
+    handleArrResponse(responseJson)
 
   /**
    * Receive predictions for a specific platform at a given station.
@@ -82,7 +92,20 @@ case class CtaTrackerApi(key: String):
     val params: mutable.Map[String, Any] = mutable.Map("stpid" -> stop)
     if max > 0 then params += ("max" -> max)
     if route != null then params += ("rt" -> route)
-    parse(request("ttarrivals.aspx", params)).extract[TTArrival]
+    val responseJson = parse(request("ttarrivals.aspx", params)) \ "ctatt"
+    handleArrResponse(responseJson)
+
+  private def handleArrResponse(responseJson: JValue): TTArrival =
+    // normalize the list of responses; if it has one item not in an array, wrap it in one
+    val normalizedJson = responseJson.transformField {
+      case ("eta", value) => ("eta", value match {
+        case arr: JArray => arr
+        case other => JArray(List(other))
+      })
+    }
+    val result = normalizedJson.extract[TTArrival]
+    result.throwError()
+    result
 
   /**
    * Predict arrivals for a given train at all subsequent stations for which that train is estimated to arrive.
@@ -91,7 +114,17 @@ case class CtaTrackerApi(key: String):
    */
   def follow(run: Int): TTFollow =
     val params: mutable.Map[String, Any] = mutable.Map("run" -> run)
-    parse(request("ttfollow.aspx", params)).extract[TTFollow]
+    val responseJson = parse(request("ttfollow.aspx", params)) \ "ctatt"
+    // normalize the list of responses; if it has one item not in an array, wrap it in one
+    val normalizedJson = responseJson.transformField {
+      case ("eta", value) => ("eta", value match {
+        case arr: JArray => arr
+        case other => JArray(List(other))
+      })
+    }
+    val result = normalizedJson.extract[TTFollow]
+    result.throwError()
+    result
 
   /**
    * Produce a list of in-service trains and basic info / locations for one L route.
@@ -103,7 +136,8 @@ case class CtaTrackerApi(key: String):
    */
   def locations(route: RouteId): TTPosition =
     val params: mutable.Map[String, Any] = mutable.Map("rt" -> route)
-    parse(request("ttpositions.aspx", params)).extract[TTPosition]
+    val responseJson = parse(request("ttpositions.aspx", params)) \ "ctatt"
+    handleLocResponse(responseJson)
 
   /**
    * Produce a list of in-service trains and basic info / locations for multiple L routes.
@@ -116,4 +150,32 @@ case class CtaTrackerApi(key: String):
    */
   def locations(routes: List[RouteId]): TTPosition =
     val params: mutable.Map[String, Any] = mutable.Map("rt" -> routes.mkString(","))
-    parse(request("ttpositions.aspx", params)).extract[TTPosition]
+    val responseJson = parse(request("ttpositions.aspx", params)) \ "ctatt"
+    handleLocResponse(responseJson)
+
+  private def handleLocResponse(responseJson: JValue): TTPosition =
+    // normalize the list of responses; if it has one item not in an array, wrap it in one
+    val normalizedJson = responseJson.transformField {
+      case ("route", value) => ("route", value match {
+        case arr: JArray =>
+          arr.map(item => {
+            item.transformField {
+              case ("train", value) => ("train", value match {
+                case arr: JArray => arr
+                case other => JArray(List(other))
+              })
+            }
+          })
+        case other: JValue => JArray(List(
+          other.transformField {
+            case ("train", value) => ("train", value match {
+              case arr: JArray => arr
+              case other => JArray(List(other))
+            })
+          }
+        ))
+      })
+    }
+    val result = normalizedJson.extract[TTPosition]
+    result.throwError()
+    result
