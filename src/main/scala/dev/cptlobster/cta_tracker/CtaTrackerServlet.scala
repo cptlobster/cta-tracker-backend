@@ -14,16 +14,19 @@
 package dev.cptlobster.cta_tracker
 
 import dev.cptlobster.cta_tracker.models.RouteId
-import dev.cptlobster.cta_tracker.models.api.{CtaApiException, CtaRateLimitException, CtaUserErrorException}
+import dev.cptlobster.cta_tracker.models.api.{CtaApiException, CtaRateLimitException, CtaUserErrorException, TTArrival}
 import dev.cptlobster.cta_tracker.utils.*
 import org.scalatra.*
+import org.scalatra.swagger.*
 import org.slf4j.LoggerFactory
 
 // JSON-related libraries
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.json.*
 
-class CtaTrackerServlet extends ScalatraServlet with JacksonJsonSupport {
+class CtaTrackerServlet(implicit val swagger: Swagger) extends ScalatraServlet with JacksonJsonSupport
+  with SwaggerSupport {
+  protected val applicationDescription = "CTA Train Tracker API"
   // Sets up automatic case class to JSON output serialization, required by
   // the JValueResult trait.
   protected lazy implicit val jsonFormats: Formats = DefaultFormats
@@ -42,12 +45,23 @@ class CtaTrackerServlet extends ScalatraServlet with JacksonJsonSupport {
     contentType = formats("json")
   }
 
-  get("/") {
+  private val healthcheck =
+    (apiOperation[Any]("healthcheck")
+      summary "Transfer to escalator at O'Hare"
+      description "Query this endpoint to ensure that the tracker is working")
+
+  get("/", operation(healthcheck)) {
     logger.info("Transfer to escalator at O'Hare")
     "{\"transfer\": {\"to\": \"escalator\", \"at\": \"O'Hare\"}}"
   }
 
-  get("/arrivals/station/:station") {
+  private val getStationArrivals =
+    (apiOperation[TTArrival]("getStationArrivals")
+      summary "Get station arrivals"
+      description "Get the upcoming arrivals at a station"
+      parameter queryParam[Int]("station").description("The ID of the station you are searching for"))
+
+  get("/arrivals/station/:station", operation(getStationArrivals)) {
     logger.info(s"Getting arrivals for station ${params("station")}")
     params("station").toIntOption match
       case Some(s) =>
@@ -62,7 +76,13 @@ class CtaTrackerServlet extends ScalatraServlet with JacksonJsonSupport {
                         body = "station ID must be an integer")
   }
 
-  get("/arrivals/stop/:stop") {
+  private val getStopArrivals =
+    (apiOperation[TTArrival]("getStopArrivals")
+      summary "Get stop arrivals"
+      description "Get the upcoming arrivals at a stop"
+      parameter queryParam[Int]("stop").description("The ID of the stop you are searching for"))
+
+  get("/arrivals/stop/:stop", operation(getStopArrivals)) {
     logger.info(s"Getting arrivals for stop ${params("stop")}")
     params("stop").toIntOption match
       case Some(s) =>
@@ -95,7 +115,7 @@ class CtaTrackerServlet extends ScalatraServlet with JacksonJsonSupport {
   get("/positions/:line") {
     logger.info(s"Getting all positions for ${params("line")}")
     try
-      val l: RouteId = RouteId(params("line"))
+      val l = RouteId(params("line"))
       api.locations(l)
     catch
       case e: CtaUserErrorException => halt(status = 400, body = s"{\"errCd\":${e.getErrCd},\"errNm\":\"${e.getErrNm}\",\"stacktrace\":${e.getStackTrace.mkString("[\"", "\",\"", "\"]")}}")

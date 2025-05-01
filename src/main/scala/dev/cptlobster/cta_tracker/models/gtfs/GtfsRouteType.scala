@@ -11,16 +11,18 @@
  * You should have received a copy of the GNU General Public License along with this program.  If not, see
  * <https://www.gnu.org/licenses/>.
  */
-import dev.cptlobster.cta_tracker._
-import org.scalatra._
-import jakarta.servlet.ServletContext
+package dev.cptlobster.cta_tracker.models.gtfs
 
-class ScalatraBootstrap extends LifeCycle {
-  implicit val swagger: TrackerSwagger = new TrackerSwagger
+object GtfsRouteType extends Enumeration:
+  type GtfsRouteType = Value
 
-  override def init(context: ServletContext): Unit = {
-    context.mount(new CtaTrackerServlet, "/*")
-    context.mount(new GtfsServlet, "/gtfs/*")
-    context.mount(new ResourcesApp, "/docs")
-  }
-}
+  val LIGHT_RAIL: GtfsRouteType = Value(0)
+  val METRO: GtfsRouteType = Value(1)
+  val RAIL: GtfsRouteType = Value(2)
+  val BUS: GtfsRouteType = Value(3)
+  val FERRY: GtfsRouteType = Value(4)
+  val CABLE_TRAM: GtfsRouteType = Value(5)
+  val AERIAL_LIFT: GtfsRouteType = Value(6)
+  val FUNICULAR: GtfsRouteType = Value(7)
+  val TROLLEYBUS: GtfsRouteType = Value(11)
+  val MONORAIL: GtfsRouteType = Value(12)

@@ -19,9 +19,11 @@ javacOptions ++= Seq("-source", "21", "-target", "21", "--add-opens", "java.base
 libraryDependencies ++= Seq(
   "org.scalatra" %% "scalatra-jakarta" % ScalatraVersion,
   "org.scalatra" %% "scalatra-json-jakarta" % ScalatraVersion,
+  "org.scalatra" %% "scalatra-swagger-jakarta"  % ScalatraVersion,
   "org.scalatra" %% "scalatra-scalatest-jakarta" % ScalatraVersion % "test",
   "org.json4s" %% "json4s-jackson" % "4.0.7",
   "org.json4s" %% "json4s-ext" % "4.0.7",
+  "com.github.tototoshi" %% "scala-csv" % "2.0.0",
   "com.softwaremill.sttp.client3" %% "core" % "3.10.3",
   "com.softwaremill.sttp.client3" %% "json4s" % "3.10.3",
   "ch.qos.logback" % "logback-classic" % "1.5.17" % "runtime",

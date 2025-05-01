@@ -21,8 +21,11 @@ RUN sbt package
 # use tomcat base image
 FROM tomcat:11-jre21 AS webapp
 
+# copy GTFS data into GTFS subdirectory
+COPY gtfs $CATALINA_HOME/gtfs
+
 # remove default ROOT webapp
-RUN rm -rf /usr/local/tomcat/webapps/ROOT
+RUN rm -rf $CATALINA_HOME/webapps/ROOT
 
 # copy current version of cta-tracker from build image
-COPY --from=build /tmp/build/target/scala-3.3.4/cta-tracker-backend_*.war /usr/local/tomcat/webapps/ROOT.war
+COPY --from=build /tmp/build/target/scala-3.3.4/cta-tracker-backend_*.war $CATALINA_HOME/webapps/ROOT.war
