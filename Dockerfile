@@ -4,7 +4,7 @@
 #  (i.e. Tomcat)
 #=======================================================================================================================
 # build our WAR inside a pre-defined sbt environment, so that Java versions all match
-FROM sbtscala/scala-sbt:eclipse-temurin-21.0.5_11_1.10.5_3.3.4 AS build
+FROM forge.cptlobster.dev/cptlobster/sbt:alpine-21-jdk-1.10.11 AS build
 LABEL stage=build
 
 # copy source files
